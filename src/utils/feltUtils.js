@@ -28,7 +28,9 @@ export function useFeltEmbed(mapId, embedOptions) {
 }
 
 export const FeltContext = React.createContext(null);
+export const LayersContext = React.createContext(null);
 export const useFelt = () => React.useContext(FeltContext);
+export const useLayers = () => React.useContext(LayersContext);
 
 export function useLiveLayerGroup(felt, initialGroup) {
   const [currentGroup, setGroup] = React.useState(initialGroup);

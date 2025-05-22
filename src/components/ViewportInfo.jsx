@@ -1,5 +1,5 @@
 import React from "react";
-import { useFelt } from "../feltUtils";
+import { useFelt } from "../utils/feltUtils";
 
 export function ViewportInfo() {
   const felt = useFelt();

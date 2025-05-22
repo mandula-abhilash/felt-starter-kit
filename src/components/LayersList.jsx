@@ -1,5 +1,3 @@
-import { Layer, LayerGroup } from "@feltmaps/js-sdk";
-import { useQuery } from "@tanstack/react-query";
 import {
   Eye,
   EyeOff,
@@ -10,39 +8,27 @@ import {
   Pentagon,
 } from "lucide-react";
 import {
-  assembleLayerTree,
   useFelt,
+  useLayers,
   useLiveLayer,
   useLiveLayerGroup,
-} from "../feltUtils";
+} from "../utils/feltUtils";
 
 export function LayersList() {
-  const felt = useFelt();
-
-  const layersQuery = useQuery({
-    queryKey: ["layers"],
-    queryFn: async () => {
-      return Promise.all([
-        felt.getLayers().then((layers) => layers.filter(Boolean)),
-        felt.getLayerGroups().then((groups) => groups.filter(Boolean)),
-      ]).then(([layers, layerGroups]) =>
-        assembleLayerTree(layers, layerGroups)
-      );
-    },
-  });
+  const layers = useLayers();
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <h2 className="p-3 py-2 font-bold">Layers</h2>
       <hr className="border-gray-200" />
       <div className="flex-1 overflow-y-auto divide-y divide-gray-200">
-        {layersQuery.isLoading && (
+        {!layers && (
           <div className="flex justify-center my-8">
             <div className="animate-spin h-6 w-6 border-2 border-gray-400 rounded-full border-t-transparent"></div>
           </div>
         )}
-        {layersQuery.data &&
-          layersQuery.data.map((n) => {
+        {layers &&
+          layers.map((n) => {
             if (n.type === "layer") {
               return <LayerItem layer={n.layer} key={n.layer.id} />;
             }

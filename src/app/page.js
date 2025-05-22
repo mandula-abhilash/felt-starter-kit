@@ -1,7 +1,13 @@
 "use client";
 
+import React from "react";
 import { LayersList } from "@/components/LayersList";
-import { FeltContext, useFeltEmbed } from "../utils/feltUtils";
+import {
+  FeltContext,
+  useFeltEmbed,
+  LayersContext,
+  assembleLayerTree,
+} from "../utils/feltUtils";
 import { ViewportInfo } from "@/components/ViewportInfo";
 
 const Home = () => {
@@ -12,11 +18,24 @@ const Home = () => {
       showLegend: false,
     },
   });
+  const [layers, setLayers] = React.useState(null);
+
+  React.useEffect(() => {
+    if (!felt) return;
+
+    Promise.all([
+      felt.getLayers().then((layers) => layers.filter(Boolean)),
+      felt.getLayerGroups().then((groups) => groups.filter(Boolean)),
+    ]).then(([layers, layerGroups]) => {
+      const tree = assembleLayerTree(layers, layerGroups);
+      setLayers(tree);
+    });
+  }, [felt]);
 
   return (
     <div className="flex h-screen overflow-hidden">
       <div className="w-80 flex-none border-r border-gray-200 overflow-hidden">
-        <FeltSidebar felt={felt} />
+        <FeltSidebar felt={felt} layers={layers} />
       </div>
       <div
         className="flex-1 bg-gray-100 relative"
@@ -41,17 +60,19 @@ const Home = () => {
   );
 };
 
-const FeltSidebar = ({ felt }) => {
+const FeltSidebar = ({ felt, layers }) => {
   return (
     <div className="flex flex-col h-full text-md overflow-hidden">
       {felt ? (
         <FeltContext.Provider value={felt}>
-          <div className="flex flex-col flex-1 overflow-hidden">
-            <LayersList />
-          </div>
-          <div className="flex-none overflow-hidden">
-            <ViewportInfo />
-          </div>
+          <LayersContext.Provider value={layers}>
+            <div className="flex flex-col flex-1 overflow-hidden">
+              <LayersList />
+            </div>
+            <div className="flex-none overflow-hidden">
+              <ViewportInfo />
+            </div>
+          </LayersContext.Provider>
         </FeltContext.Provider>
       ) : (
         <div className="flex flex-col items-center py-8 gap-3">

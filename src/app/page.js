@@ -1,5 +1,8 @@
-import { FeltController } from "@feltmaps/js-sdk";
-import { useFeltEmbed } from "../utils/feltUtils";
+"use client";
+
+import { LayersList } from "@/components/LayersList";
+import { FeltContext, useFeltEmbed } from "../utils/feltUtils";
+import { ViewportInfo } from "@/components/ViewportInfo";
 
 const Home = () => {
   const { felt, mapRef } = useFeltEmbed("w9BxV0EmdR2u5C4AyrTke9CB", {

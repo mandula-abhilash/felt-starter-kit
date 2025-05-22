@@ -11,7 +11,7 @@ import {
 import { ViewportInfo } from "@/components/ViewportInfo";
 
 const Home = () => {
-  const { felt, mapRef } = useFeltEmbed("w9BxV0EmdR2u5C4AyrTke9CB", {
+  const { felt, mapRef } = useFeltEmbed("ZGqxKlVgR8eyiNfbVsYqxB", {
     uiControls: {
       cooperativeGestures: false,
       fullScreenButton: false,

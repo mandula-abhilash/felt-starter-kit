@@ -9,6 +9,7 @@ import {
   Table,
   Filter,
   Search,
+  X,
 } from "lucide-react";
 import {
   useFelt,
@@ -89,7 +90,24 @@ function LayerGroupItem({ group: initialGroup, layers }) {
 function LayerItem({ layer }) {
   const felt = useFelt();
   const currentLayer = useLiveLayer(felt, layer);
-  const [nameFilter, setNameFilter] = React.useState("");
+  const [filters, setFilters] = React.useState(null);
+  const [areaFilter, setAreaFilter] = React.useState("");
+
+  React.useEffect(() => {
+    const fetchFilters = async () => {
+      const layerFilters = await felt.getLayerFilters(currentLayer.id);
+      setFilters(layerFilters);
+
+      // Extract area filter value if it exists
+      if (layerFilters?.ephemeral?.[2]) {
+        const value = parseFloat(layerFilters.ephemeral[2]);
+        setAreaFilter(value.toString());
+      }
+    };
+
+    fetchFilters();
+  }, [currentLayer.id]);
+
   if (!currentLayer) return null;
 
   const Icon = (function (type) {
@@ -107,35 +125,27 @@ function LayerItem({ layer }) {
     }
   })(currentLayer.geometryType);
 
-  const logFilters = async () => {
-    const filters = await felt.getLayerFilters(currentLayer.id);
-    console.log("Current filters for layer:", currentLayer.name);
-    console.log("- Ephemeral filters:", filters.ephemeral);
-    console.log("- Combined filters:", filters.combined);
-  };
-
   const clearFilters = async () => {
     await felt.setLayerFilters({
       layerId: currentLayer.id,
       filters: null,
     });
-    setNameFilter("");
-
-    await logFilters();
+    setFilters(null);
+    setAreaFilter("");
   };
 
-  const applyNameFilter = async (value) => {
-    setNameFilter(value);
+  const applyAreaFilter = async (value) => {
+    setAreaFilter(value);
     if (value.trim()) {
-      // Fix: Use single condition array format as shown in documentation
-      await felt.setLayerFilters({
-        layerId: currentLayer.id,
-        filters: ["Area_ha", "gt", `%${value}%`], // Single condition array
-      });
-
-      // Log current filters after applying name filter
-      const filters = await felt.getLayerFilters(currentLayer.id);
-      console.log("Current filters after name filter:", filters);
+      const numericValue = parseFloat(value);
+      if (!isNaN(numericValue)) {
+        await felt.setLayerFilters({
+          layerId: currentLayer.id,
+          filters: ["Area_ha", "gt", numericValue],
+        });
+        const newFilters = await felt.getLayerFilters(currentLayer.id);
+        setFilters(newFilters);
+      }
     } else {
       await clearFilters();
     }
@@ -200,25 +210,43 @@ function LayerItem({ layer }) {
           </button>
         </div>
       </div>
+
+      {/* Filter UI */}
       {currentLayer.name === "Green Belt" && (
-        <div className="mt-2 flex items-center gap-2">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={nameFilter}
-              onChange={(e) => applyNameFilter(e.target.value)}
-              placeholder="Filter by name..."
-              className="w-full pl-8 pr-2 py-1 text-sm border rounded focus:outline-none focus:border-blue-500"
-            />
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="mt-2 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type="number"
+                value={areaFilter}
+                onChange={(e) => applyAreaFilter(e.target.value)}
+                placeholder="Filter by area (ha)..."
+                className="w-full pl-8 pr-2 py-1 text-sm border rounded focus:outline-none focus:border-blue-500"
+              />
+              <Filter className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </div>
+            {areaFilter && (
+              <button
+                onClick={clearFilters}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            )}
           </div>
-          {nameFilter && (
-            <button
-              onClick={clearFilters}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Clear
-            </button>
+
+          {/* Display active filters */}
+          {filters?.ephemeral && (
+            <div className="text-sm text-gray-600">
+              <p className="font-medium">Active Filter:</p>
+              <div className="flex items-center gap-1 mt-1">
+                <span>Area</span>
+                <span>&gt;</span>
+                <span className="font-mono bg-gray-100 px-1 rounded">
+                  {filters.ephemeral[2]} ha
+                </span>
+              </div>
+            </div>
           )}
         </div>
       )}

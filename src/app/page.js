@@ -29,7 +29,6 @@ const Home = () => {
       felt.getLayerGroups().then((groups) => groups.filter(Boolean)),
     ]).then(([layers, layerGroups]) => {
       const tree = assembleLayerTree(layers, layerGroups);
-      console.log(tree);
       setLayers(tree);
     });
   }, [felt]);
@@ -43,10 +42,7 @@ const Home = () => {
         className="flex-1 bg-gray-100 relative"
         ref={mapRef}
         style={{
-          "& > iframe": {
-            position: "relative",
-            zIndex: 1,
-          },
+          isolation: "isolate",
         }}
       >
         {!felt && (

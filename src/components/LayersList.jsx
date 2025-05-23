@@ -21,7 +21,7 @@ export function LayersList() {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      <h2 className="p-3 py-2 font-bold">Layers</h2>
+      {/* <h2 className="p-3 py-2 font-bold">Layers</h2> */}
       <hr className="border-gray-200" />
       <div className="flex-1 overflow-y-auto divide-y divide-gray-200">
         {!layers && (

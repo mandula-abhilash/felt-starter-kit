@@ -11,6 +11,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import * as Slider from "@radix-ui/react-slider";
 import {
   useFelt,
   useLayers,
@@ -91,17 +92,19 @@ function LayerItem({ layer }) {
   const felt = useFelt();
   const currentLayer = useLiveLayer(felt, layer);
   const [filters, setFilters] = React.useState(null);
-  const [areaFilter, setAreaFilter] = React.useState("");
+  const [range, setRange] = React.useState([0, 70000]);
 
   React.useEffect(() => {
     const fetchFilters = async () => {
       const layerFilters = await felt.getLayerFilters(currentLayer.id);
       setFilters(layerFilters);
 
-      // Extract area filter value if it exists
-      if (layerFilters?.ephemeral?.[2]) {
-        const value = parseFloat(layerFilters.ephemeral[2]);
-        setAreaFilter(value.toString());
+      if (layerFilters?.combined) {
+        const minFilter = layerFilters.combined[0];
+        const maxFilter = layerFilters.combined[2];
+        if (minFilter && maxFilter) {
+          setRange([minFilter[2], maxFilter[2]]);
+        }
       }
     };
 
@@ -131,24 +134,28 @@ function LayerItem({ layer }) {
       filters: null,
     });
     setFilters(null);
-    setAreaFilter("");
+    setRange([0, 70000]);
   };
 
-  const applyAreaFilter = async (value) => {
-    setAreaFilter(value);
-    if (value.trim()) {
-      const numericValue = parseFloat(value);
-      if (!isNaN(numericValue)) {
-        await felt.setLayerFilters({
-          layerId: currentLayer.id,
-          filters: ["Area_ha", "gt", numericValue],
-        });
-        const newFilters = await felt.getLayerFilters(currentLayer.id);
-        setFilters(newFilters);
-      }
-    } else {
-      await clearFilters();
-    }
+  const applyAreaFilter = async (newRange) => {
+    const filters = [
+      ["Area_ha", "ge", newRange[0]],
+      "and",
+      ["Area_ha", "le", newRange[1]],
+    ];
+
+    await felt.setLayerFilters({
+      layerId: currentLayer.id,
+      filters: filters,
+    });
+
+    const newFilters = await felt.getLayerFilters(currentLayer.id);
+    setFilters(newFilters);
+  };
+
+  const handleRangeChange = (newRange) => {
+    setRange(newRange);
+    applyAreaFilter(newRange);
   };
 
   return (
@@ -214,37 +221,78 @@ function LayerItem({ layer }) {
       {/* Filter UI */}
       {currentLayer.name === "Green Belt" && (
         <div className="mt-2 space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="number"
-                value={areaFilter}
-                onChange={(e) => applyAreaFilter(e.target.value)}
-                placeholder="Filter by area (ha)..."
-                className="w-full pl-8 pr-2 py-1 text-sm border rounded focus:outline-none focus:border-blue-500"
-              />
-              <Filter className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">
+                Area Range (ha)
+              </label>
+              {filters && (
+                <button
+                  onClick={clearFilters}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              )}
             </div>
-            {areaFilter && (
-              <button
-                onClick={clearFilters}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            )}
+
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-full h-5"
+              value={range}
+              onValueChange={handleRangeChange}
+              min={0}
+              max={70000}
+              step={1}
+            >
+              <Slider.Track className="bg-gray-200 relative grow rounded-full h-[3px]">
+                <Slider.Range className="absolute bg-blue-500 rounded-full h-full" />
+              </Slider.Track>
+              <Slider.Thumb
+                className="block w-5 h-5 bg-white border-2 border-blue-500 rounded-full hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Min area"
+              />
+              <Slider.Thumb
+                className="block w-5 h-5 bg-white border-2 border-blue-500 rounded-full hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Max area"
+              />
+            </Slider.Root>
+
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <input
+                  type="number"
+                  value={range[0]}
+                  onChange={(e) =>
+                    handleRangeChange([Number(e.target.value), range[1]])
+                  }
+                  placeholder="Min"
+                  className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              <div className="flex-1">
+                <input
+                  type="number"
+                  value={range[1]}
+                  onChange={(e) =>
+                    handleRangeChange([range[0], Number(e.target.value)])
+                  }
+                  placeholder="Max"
+                  className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Display active filters */}
-          {filters?.ephemeral && (
+          {filters?.combined && (
             <div className="text-sm text-gray-600">
               <p className="font-medium">Active Filter:</p>
               <div className="flex items-center gap-1 mt-1">
+                <span>{range[0]} ha</span>
+                <span>≤</span>
                 <span>Area</span>
-                <span>&gt;</span>
-                <span className="font-mono bg-gray-100 px-1 rounded">
-                  {filters.ephemeral[2]} ha
-                </span>
+                <span>≤</span>
+                <span>{range[1]} ha</span>
               </div>
             </div>
           )}

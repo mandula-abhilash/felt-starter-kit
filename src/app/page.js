@@ -11,7 +11,8 @@ import {
 import { ViewportInfo } from "@/components/ViewportInfo";
 
 const Home = () => {
-  const { felt, mapRef } = useFeltEmbed("ZGqxKlVgR8eyiNfbVsYqxB", {
+  // const { felt, mapRef } = useFeltEmbed("ZGqxKlVgR8eyiNfbVsYqxB", {
+  const { felt, mapRef } = useFeltEmbed("H9BrbOgzvQJm9APPuYrG8xUC", {
     uiControls: {
       cooperativeGestures: false,
       fullScreenButton: false,
@@ -28,6 +29,7 @@ const Home = () => {
       felt.getLayerGroups().then((groups) => groups.filter(Boolean)),
     ]).then(([layers, layerGroups]) => {
       const tree = assembleLayerTree(layers, layerGroups);
+      console.log(tree);
       setLayers(tree);
     });
   }, [felt]);

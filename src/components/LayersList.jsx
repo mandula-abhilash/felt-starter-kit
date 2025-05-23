@@ -6,6 +6,8 @@ import {
   MapPin,
   Minus,
   Pentagon,
+  Table,
+  Filter,
 } from "lucide-react";
 import {
   useFelt,
@@ -103,6 +105,24 @@ function LayerItem({ layer }) {
     }
   })(currentLayer.geometryType);
 
+  const applyAreaFilter = () => {
+    felt.setLayerFilters({
+      layerId: currentLayer.id,
+      filters: [
+        ["area", "gt", 4047], // Greater than 1 acre (4047 sq meters)
+        "and",
+        ["area", "lt", 20235], // Less than 5 acres (20235 sq meters)
+      ],
+    });
+  };
+
+  const clearFilters = () => {
+    felt.setLayerFilters({
+      layerId: currentLayer.id,
+      filters: null,
+    });
+  };
+
   return (
     <div
       className={`flex items-start p-3 group ${
@@ -124,26 +144,57 @@ function LayerItem({ layer }) {
           <p className="text-gray-500">{currentLayer.caption}</p>
         )}
       </div>
-      <button
-        className="invisible group-hover:visible p-1 hover:bg-gray-100 rounded"
-        aria-label={currentLayer.visible ? "Hide layer" : "Show layer"}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-        }}
-        onClick={() => {
-          if (currentLayer.visible) {
-            felt.setLayerVisibility({ hide: [currentLayer.id] });
-          } else {
-            felt.setLayerVisibility({ show: [currentLayer.id] });
-          }
-        }}
-      >
-        {currentLayer.visible ? (
-          <Eye className="w-4 h-4" />
-        ) : (
-          <EyeOff className="w-4 h-4" />
-        )}
-      </button>
+      <div className="flex gap-1">
+        <button
+          className="invisible group-hover:visible p-1 hover:bg-gray-100 rounded"
+          aria-label="Filter layer"
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+          }}
+          onClick={applyAreaFilter}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            clearFilters();
+          }}
+          title="Click to filter 1-5 acres, Right-click to clear"
+        >
+          <Filter className="w-4 h-4" />
+        </button>
+        <button
+          className="invisible group-hover:visible p-1 hover:bg-gray-100 rounded"
+          aria-label="Show data table"
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+          }}
+          onClick={() => {
+            felt.showLayerDataTable({
+              layerId: currentLayer.id,
+            });
+          }}
+        >
+          <Table className="w-4 h-4" />
+        </button>
+        <button
+          className="invisible group-hover:visible p-1 hover:bg-gray-100 rounded"
+          aria-label={currentLayer.visible ? "Hide layer" : "Show layer"}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+          }}
+          onClick={() => {
+            if (currentLayer.visible) {
+              felt.setLayerVisibility({ hide: [currentLayer.id] });
+            } else {
+              felt.setLayerVisibility({ show: [currentLayer.id] });
+            }
+          }}
+        >
+          {currentLayer.visible ? (
+            <Eye className="w-4 h-4" />
+          ) : (
+            <EyeOff className="w-4 h-4" />
+          )}
+        </button>
+      </div>
     </div>
   );
 }

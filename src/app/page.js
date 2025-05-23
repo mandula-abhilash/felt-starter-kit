@@ -24,13 +24,35 @@ const Home = () => {
   React.useEffect(() => {
     if (!felt) return;
 
-    Promise.all([
-      felt.getLayers().then((layers) => layers.filter(Boolean)),
-      felt.getLayerGroups().then((groups) => groups.filter(Boolean)),
-    ]).then(([layers, layerGroups]) => {
+    async function fetchLayersAndFilters() {
+      const [layersRaw, layerGroupsRaw] = await Promise.all([
+        felt.getLayers(),
+        felt.getLayerGroups(),
+      ]);
+
+      const layers = layersRaw.filter(Boolean);
+      const layerGroups = layerGroupsRaw.filter(Boolean);
+
       const tree = assembleLayerTree(layers, layerGroups);
+      console.log("Layer Tree:", tree);
+
+      // Fetch and log filters for each layer
+      for (const layer of layers) {
+        try {
+          const filters = await felt.getLayerFilters(layer.id);
+          console.log(
+            `Filters for layer ${layer.id} (${layer.name}):`,
+            filters
+          );
+        } catch (err) {
+          console.error(`Failed to fetch filters for layer ${layer.id}:`, err);
+        }
+      }
+
       setLayers(tree);
-    });
+    }
+
+    fetchLayersAndFilters();
   }, [felt]);
 
   return (

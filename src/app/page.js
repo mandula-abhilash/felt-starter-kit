@@ -16,7 +16,7 @@ const Home = () => {
     uiControls: {
       cooperativeGestures: false,
       fullScreenButton: false,
-      showLegend: false,
+      showLegend: true,
     },
   });
   const [layers, setLayers] = React.useState(null);
